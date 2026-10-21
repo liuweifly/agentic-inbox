@@ -411,11 +411,9 @@ export async function toolSendReply(
 	if (!fromDomain) throw new Error("Invalid mailbox email address");
 	const { messageId, outgoingMessageId } = generateMessageId(fromDomain);
 
-	// Verify and append quoted original message
-	const sanitizedBody = await verifyDraft(env.AI, params.bodyHtml);
-	if (!sanitizedBody) {
-		return { error: "Draft verification failed — refusing to send unverified content. Please try again." };
-	}
+	// MCP callers send final, reviewed HTML: skip the AI verifier, which
+	// rewrites the body (flattens paragraphs, changes words and numbers).
+	const sanitizedBody = params.bodyHtml;
 	const quotedBlock = buildQuotedReplyBlock({
 		date: originalEmail.date,
 		sender: originalEmail.sender || params.to,
@@ -477,10 +475,8 @@ export async function toolSendEmail(
 	if (!fromDomain) throw new Error("Invalid mailbox email address");
 	const { messageId, outgoingMessageId } = generateMessageId(fromDomain);
 
-	const sanitizedBody = await verifyDraft(env.AI, params.bodyHtml);
-	if (!sanitizedBody) {
-		return { error: "Draft verification failed — refusing to send unverified content. Please try again." };
-	}
+	// See toolSendReply: MCP sends skip the AI verifier.
+	const sanitizedBody = params.bodyHtml;
 
 	try {
 		await sendEmail(env.EMAIL, {
